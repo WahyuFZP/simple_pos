@@ -13,7 +13,7 @@ export function PosClient({ items }: { items: MenuItem[] }) {
       <div className="flex-1 overflow-hidden">
         <MenuGrid items={items} onAddToCart={addItem} />
       </div>
-      <div className="w-[380px] flex-shrink-0 border-l border-[#E2DCD3] bg-white hidden lg:flex">
+      <div className="w-95 shrink-0 border-l border-[#E2DCD3] bg-white hidden lg:flex">
         <CartPanel items={cartItems} total={total} itemCount={itemCount} onUpdateQuantity={updateQuantity} onRemoveItem={removeItem} onClearCart={clearCart} />
       </div>
     </div>

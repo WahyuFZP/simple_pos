@@ -6,10 +6,8 @@ import { test, expect } from '@playwright/test';
 test.describe('POS - Checkout Flow', () => {
 
   test.beforeEach(async ({ page }) => {
-    await page.goto('/login');
-    await page.fill('input[type="email"]', 'admin@simplepos.com');
-    await page.fill('input[type="password"]', 'admin123');
-    await page.click('button[type="submit"]');
+    // Session sudah otomatis terisi dari auth.setup.ts (storageState)
+    await page.goto('/pos');
     await expect(page).toHaveURL('/pos');
   });
 
@@ -73,7 +71,7 @@ test.describe('POS - Checkout Flow', () => {
 
     // Cek total muncul
     await expect(page.locator('text=Total')).toBeVisible();
-    await expect(page.locator('text=Rp25.000')).toBeVisible();
+    await expect(page.locator('span', { hasText: 'Rp25.000' })).toBeVisible();
 
     // Input bayar 30000
     await page.fill('input[placeholder="0"]', '30000');

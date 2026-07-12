@@ -35,7 +35,7 @@ export function Header({ user }: HeaderProps) {
           <div className="relative">
             <button className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-[#1A1A1A] hover:bg-[#F0EDE8] transition cursor-pointer" onClick={() => setUserMenuOpen(!userMenuOpen)}>
               <div className="flex items-center justify-center w-7 h-7 rounded-full bg-[#F0EDE8] text-xs font-bold text-[#C73B2B]">{user.name?.charAt(0) ?? "?"}</div>
-              <span className="max-w-[120px] truncate">{user.name ?? user.email}</span>
+              <span className="max-w-30 truncate">{user.name ?? user.email}</span>
               <ChevronDown className="h-3.5 w-3.5 text-[#6B645C]" />
             </button>
             {userMenuOpen && (<>

@@ -16,11 +16,15 @@ export default function LoginPage() {
     e.preventDefault();
     setError("");
     setLoading(true);
-    const result = await signIn("credentials", { email, password, redirect: false });
-    setLoading(false);
-    if (result?.error) { setError("Email atau password salah."); return; }
-    router.push("/pos");
-    router.refresh();
+    try {
+      const result = await signIn("credentials", { email, password, redirect: false });
+      if (result?.error) { setError("Email atau password salah."); return; }
+      router.replace("/pos");
+    } catch {
+      setError("Email atau password salah.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (

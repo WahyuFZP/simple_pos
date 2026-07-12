@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { ShoppingCart, Trash2, Printer } from "lucide-react";
+import { ShoppingCart, Trash2, Printer, FileDown } from "lucide-react";
 import { formatNumber } from "@/lib/utils";
 import { CartItemRow } from "@/components/order/CartItem";
 import { CheckoutForm } from "@/components/order/CheckoutForm";
 import { Button } from "@/components/ui/Button";
+import { useDownloadReceipt } from "@/components/receipt/useDownloadReceipt";
 import type { CartItem, OrderItemSnapshot } from "@/types";
 
 interface CartPanelProps {
@@ -19,9 +20,10 @@ interface CartPanelProps {
 
 export function CartPanel({ items, total, itemCount, onUpdateQuantity, onRemoveItem, onClearCart }: CartPanelProps) {
   const [loading, setLoading] = useState(false);
-  const [receipt, setReceipt] = useState<{ items: OrderItemSnapshot[]; total: number; payment: number; change: number; orderId: string } | null>(null);
+  const [receipt, setReceipt] = useState<{ items: OrderItemSnapshot[]; total: number; payment: number; change: number; orderId: string; cashierName: string } | null>(null);
   const [error, setError] = useState("");
   const receiptRef = useRef<HTMLDivElement>(null);
+  const { downloadReceipt } = useDownloadReceipt();
 
   const handleCheckout = async (paymentAmount: number) => {
     setLoading(true); setError("");
@@ -30,7 +32,7 @@ export function CartPanel({ items, total, itemCount, onUpdateQuantity, onRemoveI
       const res = await fetch("/api/orders", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ items: orderItems, total, paymentAmount, change: paymentAmount - total }) });
       if (!res.ok) { const data = await res.json(); throw new Error(data.error || "Gagal memproses pembayaran."); }
       const data = await res.json();
-      setReceipt({ items: orderItems.map((item, idx) => ({ id: `item-${idx}`, name: item.name, quantity: item.quantity, price: item.price })), total, payment: paymentAmount, change: paymentAmount - total, orderId: data.orderId });
+      setReceipt({ items: orderItems.map((item, idx) => ({ id: `item-${idx}`, name: item.name, quantity: item.quantity, price: item.price })), total, payment: paymentAmount, change: paymentAmount - total, orderId: data.orderId, cashierName: data.cashierName });
       onClearCart();
     } catch (err) { setError(err instanceof Error ? err.message : "Terjadi kesalahan."); }
     finally { setLoading(false); }
@@ -38,11 +40,25 @@ export function CartPanel({ items, total, itemCount, onUpdateQuantity, onRemoveI
 
   const handleNewOrder = () => { setReceipt(null); setError(""); };
 
+  const handleDownloadPdf = async () => {
+    if (!receipt) return;
+    await downloadReceipt({
+      storeName: "Simple POS",
+      orderId: receipt.orderId,
+      cashierName: receipt.cashierName,
+      date: new Date().toLocaleString("id-ID", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" }),
+      items: receipt.items,
+      total: receipt.total,
+      paymentAmount: receipt.payment,
+      change: receipt.change,
+    });
+  };
+
   if (receipt) {
     return (
       <div className="flex flex-col h-full bg-white">
         <div ref={receiptRef} className="flex-1 flex flex-col items-center p-6 print-receipt">
-          <div className="w-full max-w-[300px] text-center space-y-4">
+          <div className="w-full max-w-75 text-center space-y-4">
             <div className="border-b-2 border-dashed border-[#E2DCD3] pb-4">
               <h2 className="font-display font-bold text-lg text-[#1A1A1A]">🍽️ Simple POS</h2>
               <p className="text-xs text-[#6B645C] mt-1">{new Date().toLocaleString("id-ID", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" })}</p>
@@ -60,7 +76,10 @@ export function CartPanel({ items, total, itemCount, onUpdateQuantity, onRemoveI
           </div>
         </div>
         <div className="p-4 border-t border-[#E2DCD3] space-y-2">
-          <Button variant="outline" className="w-full" onClick={() => window.print()}><Printer className="h-4 w-4" /> Cetak Struk</Button>
+          <div className="flex gap-2">
+            <Button variant="outline" className="flex-1" onClick={() => window.print()}><Printer className="h-4 w-4" /> Cetak</Button>
+            <Button variant="outline" className="flex-1" onClick={handleDownloadPdf}><FileDown className="h-4 w-4" /> PDF</Button>
+          </div>
           <Button className="w-full" onClick={handleNewOrder}>Pesanan Baru</Button>
         </div>
       </div>

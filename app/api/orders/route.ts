@@ -14,7 +14,10 @@ export async function POST(req: Request) {
         items: { create: items.map((item: { menuId: string; name: string; quantity: number; price: number }) => ({ menuId: item.menuId, name: item.name, quantity: item.quantity, price: item.price })) }
       }
     });
-    return NextResponse.json({ orderId: `#${order.id.slice(0, 8).toUpperCase()}` }, { status: 201 });
+    return NextResponse.json({
+      orderId: `#${order.id.slice(0, 8).toUpperCase()}`,
+      cashierName: session.user.name || "Kasir",
+    }, { status: 201 });
   } catch (error) {
     console.error("Create order error:", error);
     return NextResponse.json({ error: "Gagal memproses pesanan." }, { status: 500 });

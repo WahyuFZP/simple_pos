@@ -30,34 +30,54 @@ export default defineConfig({
     reuseExistingServer: !process.env.CI,
   },
 
-  /* Configure projects for major browsers */
   projects: [
+    /* Setup: login sekali, simpan session */
+    {
+      name: 'setup',
+      testMatch: /auth\.setup\.ts/,
+    },
+
+    /* Auth: test login flow — butuh browser clean tanpa session tersimpan */
+    {
+      name: 'auth-chromium',
+      testMatch: /auth\.spec\.ts/,
+      use: { ...devices['Desktop Chrome'] },
+      dependencies: ['setup'],
+    },
+    {
+      name: 'auth-firefox',
+      testMatch: /auth\.spec\.ts/,
+      use: { ...devices['Desktop Firefox'] },
+      dependencies: ['setup'],
+    },
+    {
+      name: 'auth-webkit',
+      testMatch: /auth\.spec\.ts/,
+      use: { ...devices['Desktop Safari'] },
+      dependencies: ['setup'],
+    },
+
+    /* Main tests: pake session dari setup (checkout, navigation, dll) */
     {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      testIgnore: /auth\./,
+      use: { ...devices['Desktop Chrome'], storageState: 'tests/pos/auth-state.json' },
+      dependencies: ['setup'],
     },
-
     {
       name: 'firefox',
-      use: { ...devices['Desktop Firefox'] },
+      testIgnore: /auth\./,
+      use: { ...devices['Desktop Firefox'], storageState: 'tests/pos/auth-state.json' },
+      dependencies: ['setup'],
     },
-
     {
       name: 'webkit',
-      use: { ...devices['Desktop Safari'] },
+      testIgnore: /auth\./,
+      use: { ...devices['Desktop Safari'], storageState: 'tests/pos/auth-state.json' },
+      dependencies: ['setup'],
     },
 
     /* Test against mobile viewports. */
-    // {
-    //   name: 'Mobile Chrome',
-    //   use: { ...devices['Pixel 5'] },
-    // },
-    // {
-    //   name: 'Mobile Safari',
-    //   use: { ...devices['iPhone 12'] },
-    // },
-
-    /* Test against branded browsers. */
     // {
     //   name: 'Microsoft Edge',
     //   use: { ...devices['Desktop Edge'], channel: 'msedge' },

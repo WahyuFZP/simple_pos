@@ -17,16 +17,24 @@ const prisma = new PrismaClient({ adapter });
 async function main() {
   console.log("🌱 Seeding database...");
 
-  // ─── 1. Admin User ─────────────────────────────
+  // ─── Bersihkan data lama yang corrupt ──────────
+  // Hapus user dengan email "  " (bug dari seed sebelumnya)
+  const corruptedUser = await prisma.user.findFirst({ where: { email: "  " } });
+  if (corruptedUser) {
+    await prisma.user.delete({ where: { id: corruptedUser.id } });
+    console.log("  🧹 Cleaned up corrupted admin user (email was '  ')");
+  }
+
+  // ─── 1. Users ──────────────────────────────────
   const adminPassword = await bcrypt.hash("admin123", 10);
   const kasirPassword = await bcrypt.hash("kasir123", 10);
 
   const admin = await prisma.user.upsert({
     where: { email: "admin@simplepos.com" },
-    update: {},
+    update: { password: adminPassword },
     create: {
       name: "Admin",
-      email: "  ",
+      email: "admin@simplepos.com",
       password: adminPassword,
       role: "admin",
     },
@@ -35,7 +43,7 @@ async function main() {
 
   const kasir = await prisma.user.upsert({
     where: { email: "kasir@simplepos.com" },
-    update: {},
+    update: { password: kasirPassword },
     create: {
       name: "Kasir 1",
       email: "kasir@simplepos.com",
@@ -71,6 +79,10 @@ async function main() {
     { name: "Martabak Mini", price: 15000, category: "snack" },
   ];
 
+  // Hapus data lama dulu agar idempotent (urutan penting karena foreign key)
+  await prisma.orderItem.deleteMany();
+  await prisma.order.deleteMany();
+  await prisma.menuItem.deleteMany();
   for (const item of menuItems) {
     await prisma.menuItem.create({ data: item });
   }
