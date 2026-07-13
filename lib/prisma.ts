@@ -13,6 +13,7 @@ const getPool = () => {
   return new pg.Pool({
     connectionString: process.env.DATABASE_URL,
     max: 10,
+    family: 4, // paksa IPv4 — GitHub Actions tidak support IPv6 ke Supabase
     ssl: {
       rejectUnauthorized: false, // diperlukan untuk Supabase (self-signed cert)
     },
