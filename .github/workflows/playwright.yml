@@ -28,18 +28,25 @@ jobs:
     - name: Generate Prisma Client
       run: npx prisma generate
 
-    # Force IPv4 untuk Prisma CLI (GitHub Actions IPv6 issue)
-    - name: Run Prisma Migrations
-      run: npx prisma migrate deploy
-      env:
-        DATABASE_URL: ${{ secrets.SUPABASE_DATABASE_URL }}
-        NODE_OPTIONS: "--dns-result-order=ipv4first"
+    # Resolve IPv4 untuk Supabase (GitHub Actions IPv6 issue)
+    - name: Run Prisma Migrations with IPv4
+      run: |
+        HOST="db.iozfxtrbbrtbsmvqwqka.supabase.co"
+        echo "Resolving IPv4 for $HOST..."
+        IPV4=$(python3 -c "import socket; print(socket.gethostbyname('$HOST'))")
+        echo "✅ $HOST → $IPV4"
+        URL="${{ secrets.SUPABASE_DATABASE_URL }}"
+        URL_IPV4="${URL//$HOST/$IPV4}"
+        echo "Running migrations..."
+        DATABASE_URL="$URL_IPV4" npx prisma migrate deploy
 
     - name: Seed database for testing
-      run: npx prisma db seed
-      env:
-        DATABASE_URL: ${{ secrets.SUPABASE_DATABASE_URL }}
-        NODE_OPTIONS: "--dns-result-order=ipv4first"
+      run: |
+        HOST="db.iozfxtrbbrtbsmvqwqka.supabase.co"
+        IPV4=$(python3 -c "import socket; print(socket.gethostbyname('$HOST'))")
+        URL="${{ secrets.SUPABASE_DATABASE_URL }}"
+        URL_IPV4="${URL//$HOST/$IPV4}"
+        DATABASE_URL="$URL_IPV4" npx prisma db seed
 
     - name: Run Playwright tests
       run: npx playwright test
