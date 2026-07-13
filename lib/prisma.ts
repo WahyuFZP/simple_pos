@@ -13,6 +13,9 @@ const getPool = () => {
   return new pg.Pool({
     connectionString: process.env.DATABASE_URL,
     max: 10,
+    ssl: {
+      rejectUnauthorized: false, // diperlukan untuk Supabase (self-signed cert)
+    },
   });
 };
 
