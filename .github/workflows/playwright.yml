@@ -28,11 +28,18 @@ jobs:
     - name: Generate Prisma Client
       run: npx prisma generate
 
-    # Migrasi & seed sudah dijalankan dari lokal
-    # - name: Run Prisma Migrations (setup DB staging)
-    #   run: npx prisma migrate deploy
-    # - name: Seed database for testing
-    #   run: npx prisma db seed
+    # Force IPv4 untuk Prisma CLI (GitHub Actions IPv6 issue)
+    - name: Run Prisma Migrations
+      run: npx prisma migrate deploy
+      env:
+        DATABASE_URL: ${{ secrets.SUPABASE_DATABASE_URL }}
+        NODE_OPTIONS: "--dns-result-order=ipv4first"
+
+    - name: Seed database for testing
+      run: npx prisma db seed
+      env:
+        DATABASE_URL: ${{ secrets.SUPABASE_DATABASE_URL }}
+        NODE_OPTIONS: "--dns-result-order=ipv4first"
 
     - name: Run Playwright tests
       run: npx playwright test
