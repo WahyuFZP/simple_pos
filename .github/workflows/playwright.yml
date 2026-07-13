@@ -28,29 +28,7 @@ jobs:
     - name: Generate Prisma Client
       run: npx prisma generate
 
-    # Debug: test koneksi database dulu
-    - name: Debug database connection
-      run: |
-        echo "Testing connection to Supabase..."
-        node -e "
-        const { Pool } = require('pg');
-        const pool = new Pool({
-          connectionString: process.env.DATABASE_URL,
-          ssl: { rejectUnauthorized: false },
-        });
-        pool.query('SELECT 1 as connected', (err, res) => {
-          if (err) {
-            console.error('❌ Connection failed:', err.message);
-            process.exit(1);
-          }
-          console.log('✅ Database connected:', res.rows[0]);
-          pool.end();
-        });
-        "
-      env:
-        DATABASE_URL: ${{ secrets.SUPABASE_DATABASE_URL }}
-
-    # Migrasi & seed sudah dijalankan dari lokal ke Supabase
+    # Migrasi & seed sudah dijalankan dari lokal
     # - name: Run Prisma Migrations (setup DB staging)
     #   run: npx prisma migrate deploy
     # - name: Seed database for testing
