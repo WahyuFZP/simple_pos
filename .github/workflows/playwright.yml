@@ -8,11 +8,27 @@ jobs:
   test:
     timeout-minutes: 60
     runs-on: ubuntu-latest
+
+    # PostgreSQL service — lebih cepat & reliable daripada Supabase untuk CI
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: simple_pos_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     env:
-      # Opsi 2: Pakai Supabase Cloud DB (production-like)
-      # Set DATABASE_URL via GitHub Secrets → Settings → Secrets → Actions
-      DATABASE_URL: ${{ secrets.SUPABASE_DATABASE_URL }}
+      DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/simple_pos_test"
       AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
+
     steps:
     - uses: actions/checkout@v4
     - uses: actions/setup-node@v4
@@ -28,30 +44,14 @@ jobs:
     - name: Generate Prisma Client
       run: npx prisma generate
 
-    # Resolve IPv4 untuk Supabase (GitHub Actions IPv6 issue)
-    - name: Run Prisma Migrations with IPv4
-      run: |
-        HOST="db.iozfxtrbbrtbsmvqwqka.supabase.co"
-        echo "Resolving IPv4 for $HOST..."
-        IPV4=$(python3 -c "import socket; print(socket.gethostbyname('$HOST'))")
-        echo "✅ $HOST → $IPV4"
-        URL="${{ secrets.SUPABASE_DATABASE_URL }}"
-        URL_IPV4="${URL//$HOST/$IPV4}"
-        echo "Running migrations..."
-        DATABASE_URL="$URL_IPV4" npx prisma migrate deploy
+    - name: Run Prisma Migrations
+      run: npx prisma migrate deploy
 
     - name: Seed database for testing
-      run: |
-        HOST="db.iozfxtrbbrtbsmvqwqka.supabase.co"
-        IPV4=$(python3 -c "import socket; print(socket.gethostbyname('$HOST'))")
-        URL="${{ secrets.SUPABASE_DATABASE_URL }}"
-        URL_IPV4="${URL//$HOST/$IPV4}"
-        DATABASE_URL="$URL_IPV4" npx prisma db seed
+      run: npx prisma db seed
 
     - name: Run Playwright tests
       run: npx playwright test
-      env:
-        DATABASE_URL: ${{ secrets.SUPABASE_DATABASE_URL }}
 
     - uses: actions/upload-artifact@v4
       if: ${{ !cancelled() }}

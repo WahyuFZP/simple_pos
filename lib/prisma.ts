@@ -13,11 +13,11 @@ const getPool = () => {
   return new pg.Pool({
     connectionString: process.env.DATABASE_URL,
     max: 10,
-    family: 4,
-    ssl: {
-      rejectUnauthorized: false,
-    },
-  } as any);
+    ssl:
+      process.env.DATABASE_URL?.includes("supabase.co")
+        ? { rejectUnauthorized: false }
+        : false,
+  });
 };
 
 export const prisma = globalForPrisma.prisma ?? new PrismaClient({ adapter: new PrismaPg(getPool()) });
