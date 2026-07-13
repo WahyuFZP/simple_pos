@@ -13,11 +13,11 @@ const getPool = () => {
   return new pg.Pool({
     connectionString: process.env.DATABASE_URL,
     max: 10,
-    family: 4, // paksa IPv4 — GitHub Actions tidak support IPv6 ke Supabase
+    family: 4,
     ssl: {
-      rejectUnauthorized: false, // diperlukan untuk Supabase (self-signed cert)
+      rejectUnauthorized: false,
     },
-  });
+  } as any);
 };
 
 export const prisma = globalForPrisma.prisma ?? new PrismaClient({ adapter: new PrismaPg(getPool()) });
