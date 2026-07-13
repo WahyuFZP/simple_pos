@@ -25,15 +25,12 @@ jobs:
     - name: Install Playwright Browsers
       run: npx playwright install --with-deps
 
-    - name: Run Prisma Migrations (setup DB staging)
-      run: npx prisma migrate deploy
-      env:
-        DATABASE_URL: ${{ secrets.SUPABASE_DATABASE_URL }}
-
-    - name: Seed database for testing
-      run: npx prisma db seed
-      env:
-        DATABASE_URL: ${{ secrets.SUPABASE_DATABASE_URL }}
+    # Database staging sudah di-setup manual via lokal
+    # Migrasi & seed dijalankan sekali saja, tidak tiap CI run
+    # - name: Run Prisma Migrations (setup DB staging)
+    #   run: npx prisma migrate deploy
+    # - name: Seed database for testing
+    #   run: npx prisma db seed
 
     - name: Run Playwright tests
       run: npx playwright test
