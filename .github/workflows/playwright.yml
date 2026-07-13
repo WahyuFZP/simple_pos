@@ -1,24 +1,60 @@
 name: Playwright Tests
 on:
   push:
-    branches: [ main, master ]
+    branches: [ main, master, staging ]
   pull_request:
-    branches: [ main, master ]
+    branches: [ main, master, staging ]
 jobs:
   test:
     timeout-minutes: 60
     runs-on: ubuntu-latest
+    services:
+      # Opsi 1: Pakai service PostgreSQL bawaan CI (gratis, isolated)
+      # postgres:
+      #   image: postgres:16
+      #   env:
+      #     POSTGRES_USER: postgres
+      #     POSTGRES_PASSWORD: postgres
+      #     POSTGRES_DB: simple_pos_test
+      #   ports:
+      #     - 5432:5432
+      #   options: >-
+      #     --health-cmd pg_isready
+      #     --health-interval 10s
+      #     --health-timeout 5s
+      #     --health-retries 5
+    env:
+      # Opsi 2: Pakai Supabase Cloud DB (production-like)
+      # Set DATABASE_URL via GitHub Secrets → Settings → Secrets → Actions
+      DATABASE_URL: ${{ secrets.SUPABASE_DATABASE_URL }}
+      AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
     steps:
     - uses: actions/checkout@v4
     - uses: actions/setup-node@v4
       with:
         node-version: lts/*
+
     - name: Install dependencies
       run: npm ci
+
     - name: Install Playwright Browsers
       run: npx playwright install --with-deps
+
+    - name: Run Prisma Migrations (setup DB staging)
+      run: npx prisma migrate deploy
+      env:
+        DATABASE_URL: ${{ secrets.SUPABASE_DATABASE_URL }}
+
+    - name: Seed database for testing
+      run: npx prisma db seed
+      env:
+        DATABASE_URL: ${{ secrets.SUPABASE_DATABASE_URL }}
+
     - name: Run Playwright tests
       run: npx playwright test
+      env:
+        DATABASE_URL: ${{ secrets.SUPABASE_DATABASE_URL }}
+
     - uses: actions/upload-artifact@v4
       if: ${{ !cancelled() }}
       with:
